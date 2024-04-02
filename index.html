@@ -1,375 +1,517 @@
-<!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-    <title>
-    Jackson County Missouri Land Records Management
-    </title>
+	<title>Jackson County, Missouri Parcel Viewer</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="https://js.arcgis.com/4.25/esri/themes/light/main.css" />
-    <script src="https://js.arcgis.com/4.25"></script>
-    <style>
-        html,
-        body {
-            padding: 0;
-            margin: 0;
-            height: 100%;
-            width: 100%;
-        }
-        .overlay {
-            width: 100%;
-            height: 100%;
-            background-color: black;
-            position: absolute;
-            opacity: .75;
-            z-index: 1;
-        }
-        .splashcont {
-            width: 70%;
-            height: 50%;
-            background-color: white;
-            position: relative;
-            top: 0%;
-            z-index: 2;
-            border: solid 10px white;
-            box-shadow: inset 0 0 27px 5px;
-            text-align: center;
-            font-size: smaller;
-            overflow-x: auto;
-            padding: 25px;
-        }
-        .Splashscreen{
-            height:100%;
-            width: 100%;
-            display: flex;
-            position:absolute;
-            justify-content: center;
-            align-items: center;
-        }
-        .esri-expand__panel .esri-widget--button {
-            width: 50px;
-            height: 50px;
-            border: 2px solid #3c3c3c;
-            box-shadow: 0 0 5px;
-        }
-    	#questionsbutton {
-    		box-shadow: 0 0 5px;
-    		width: 3.6em;
-    		height: 3.6em;
-    		cursor: pointer;
-    		border: 2px solid #3eaa3e;
-    		border-radius: 5px;
-    		box-shadow: 0 0 5px;
-    	}
-    	#questionsbutton:hover {
-    		background-color: #3eaa3e;
-    		color: white;
-    		border: 2px solid black;
-    	}
-        .esri-icon-comment {
-            font-size: 26px;
-        }
-        #viewDiv {
-            padding: 0;
-            margin: 0;
-            height: 100% !important;
-            width: 100% !important;
-            z-index:0;
-        }
-        .container {
-            display: none !important;
-            height: 50%;
-            width: 100%;
-        }
-        .esri-popup__main-container {
-            display: none !important;
-        }
-    	#submitButton {
-    		background-color: white;
-    		color: black;
-    		vertical-align: middle;
-    		border: 2px solid #3eaa3e;
-    		border-radius: 5px;
-    		box-shadow: 0 0 5px;
-    		font-weight: bold;
-    		bottom: 5px;
-    		position: relative;
-    		cursor: pointer;
-    		float: right;
-    		right: 15px;
-    	}
-    	#submitButton:hover {
-    		background-color: #3eaa3e;
-    		color: white;
-    		border: 2px solid black;
-    	}
-    	.card {
-    		box-shadow: 0 0 5px;
-    		transition: 0.3s;
-    		width: 40%;
-    		border: 2px solid #3eaa3e;
-    		border-radius: 5px;
-    		position: absolute;
-    		background-color: white;
-    		right: 10px;
-    		top: 15px;
-    		width: 365px;
-    		display: flex;
-    		flex-flow: row nowrap;
-    		justify-content: center;
-    		align-items: center;
-    		overflow: visible;
-    	}
-        mark.cyan{
-            color:aqua;
-            background: none;
-        }
-    	.container2 {
-    		padding: 2px 16px;
-    		width: inherit;
-    	}
-    	.esri-search__container {
-    		box-shadow: 0 0 5px;
-    		border-radius: 5px;
-    		border: 2px solid #3eaa3e;
-    	}
+	<!-- this needs to go at the top - for tab buttons -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 
-    	.card > .container2 > .container-header {
-    		flex-flow: row nowrap;
-    		float: left;
-    		width: inherit;
-    		border-bottom: 3px solid #3eaa3e;
-    	}
+	<!-- jquery -->
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
+	<script src="//code.jquery.com/jquery-1.12.4.js"></script>
+	<script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	
+	<!-- boostrap -->
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
 
-    </style>
-    <script>
-        require([
-            "esri/Map",
-            "esri/views/MapView",
-            "esri/layers/FeatureLayer",
-            "esri/layers/GraphicsLayer",
-            "esri/widgets/Sketch/SketchViewModel",
-            "esri/Graphic",
-            "esri/Basemap",
-            "esri/symbols/SimpleFillSymbol",
-            "esri/symbols/SimpleLineSymbol",
-            "esri/widgets/Search",
-            "esri/views/View",
-        ], function (
-            Map,
-            MapView,
-            FeatureLayer,
-            GraphicsLayer,
-            SketchViewModel,
-            Graphic,
-            Basemap,
-            SimpleFillSymbol,
-            SimpleLineSymbol,
-            Search,
-            View,
-        ) {
-            const parcels = new FeatureLayer({
-                url: "https://services3.arcgis.com/4LOAHoFXfea6Y3Et/arcgis/rest/services/ParcelViewer_ParcelsPointsAscend_Public/FeatureServer/1",
-                outFields: ["*"],
-                minScale: 10000
-            });
-            let ParcelView;
-            parcels
-                .when(() => {
-                    view.whenLayerView(parcels).then(function (layerView) {
-                        ParcelView = layerView;
-                    });
-                })
-            const map = new Map({
-                basemap: "streets-vector"
-            });
-            map.add(parcels);
-            // initialize the view with USA Contiguous Albers Equal Area Conic
-            // projection and set the extent to the states
-            const view = new MapView({
-                container: "viewDiv",
-                map: map,
-                zoom: 13,
-                center: [-94.35, 39.01]
-            });
-            view.ui.components = ["attribution"];
-            const searchWidget = new Search({
-                view: view,
-			 resultGraphicEnabled: false,
-                sources: [{
-				layer: parcels,
-				searchFields: ["Name"],
-				searchTerm: ["Name"],
-				exactMatch: true,
-				placeholder: "Search by tax parcel #",
-				name: "Search by Parcel #",
-				maxResults: 20,
-				maxSuggestions: 20,
-				suggestionsEnabled: true,
-				minSuggestCharacters: 3
-				}],
-                locationEnables: false,
-		      includeDefaultSources: false,
-			 searchAllEnabled: true,
+	<!-- ESRI Javascript API -->
+	<script src="https://js.arcgis.com/4.21/"></script>
+	<link rel="stylesheet" href="https://js.arcgis.com/4.21/esri/themes/light/main.css" />
 
-            });
-            view.ui.add([
-                {
-                component:searchWidget,
-                position: "top-left",
-                index:0
-                },{
-                component: questionsbutton,
-                position: "top-left",
-                index:1
-                }
-            ]);
+	<!-- style sheet and javascript for app -->
+	<link rel="stylesheet" href="Style.css"/>
+	<script src="Script.js?v=27"></script>
+	<script src="GetData.js?v=19"></script>
 
-                
-            const polygonGraphicsLayer = new GraphicsLayer();
-            map.add(polygonGraphicsLayer);
-            
-            let highlight;
-            let selected = []
-            var overlay = document.querySelector('.Splashscreen');
-                overlay.addEventListener('click',()=>{
-                overlay.style.display="none";
-                setTimeout(() => {
-                   overlay.classList.add('hidden') 
-                },610);
-            })
-		   searchWidget.on("select-result",function() {
-			   parcelnum=searchWidget.searchTerm;
-			   const para=document.createElement("p");
-			   para.innerHTML=parcelnum;
-			   para.setAttribute("id",parcelnum);
-			   document.getElementById("selectedparcels").appendChild(para);
+	<script type="text/javascript">
+		// global variables - need these in main web page
+		var parcelsLayer, parcelnum, theMap, theView, xcoord, ycoord, parcelsQuery, lat, lon, selectedParcel, photoCount;
+		var photos_array = [];
+		// for appeals forms ... misc basic info variables not already in global variables list above ...
+		var situs_address, legaldescription, owner, landusecode, bldg_sqft, num_beds, num_baths, year_built, TCA, exemption, nhood;
+		// ... and property values variables (for Year0)
+		var land_ag_val, land_com_val, land_res_val, imp_ag_val, imp_com_val, imp_res_val, newcon_ag_val, newcon_com_val, newcon_res_val, TMV, TAV, TTV;
 
-		   });
-		   searchWidget.on("search-clear",function() {
-			   const element=document.getElementById(parcelnum);
-			   element.parentNode.removeChild(element);
-		   });
-            view.on("click", (event) => {
-                // get the parcel number from the selected parcel
-                view.hitTest(event).then((response) => {
-                    // put geometry-getting code here
-                    parcelarray = selected;
-                    let firstLayer = response.results[0];
-                    let grp = firstLayer.graphic;
-                    let objects = grp.attributes.Name;
-				
-				const alert = document.getElementById("alert");
-				alert.style.display = "block";
-
-                    //checks if the selected feature array contains the graphic.
-                    function containsObject(obj, list) {
-
-                        return list.some(elem => elem.attributes.OBJECTID === obj.attributes.OBJECTID)
-                    }
-                    //if we have the graphic in the selected array(means it is highlighted)
-                    if (containsObject(grp, selected)) {
-                        selected = selected.filter(item => item.attributes.Name !== grp.attributes.Name) // we remove the graphic from selected array
-                        if (highlight) {
-                            highlight.remove()//remove the old highlight
-                            const element = document.getElementById(objects);
-                            element.parentNode.removeChild(element);
-                        }
-                        highlight = ParcelView.highlight(selected) // add the highlight as per the new filtered array
-                    } else {
-                        // if the graphic is not present in select array(means it is not highlighted)
-                        selected.push(grp) //we add the graphic to array
-                        if (highlight) {
-                            highlight.remove()// remove the old highlight       
-                        }
-                        highlight = ParcelView.highlight(selected)// add the new select graphics array to highlight
-                        const para = document.createElement("p");
-                        para.innerHTML = objects;
-                        para.setAttribute("id", objects);
-                        document.getElementById("selectedparcels").appendChild(para);
-                    }
-                });
-            });
-        });
-        function submitButton(){
-            stringbuilder="";
-            if (parcelarray.length === 0) {
-                alert("No coordinates found.")  
-            }
-            for (let i = 0; i < parcelarray.length; i++) {
-                const parcel = parcelarray[i].geometry.rings;
-                for(let i = 0; i < parcel[0].length; i++) {    
-                    const temp = parcel[0][i][0];
-                    const temp1 =parcel[0][i][1];
-                    parcel[0][i][0] = temp1;
-                    parcel[0][i][1] = temp;
-                    stringbuilder = (stringbuilder + parcel[0][i][0] + " " + parcel[0][i][1] + ";");
-                }
-                parcelnum = "";
-                for (let i = 0; i < parcelarray.length; i++){
-                    var parcelnumbuilder = parcelarray[i].attributes.Name;
-                    parcelnum = (parcelnum + parcelnumbuilder + ", ");
-                }
-            }
-            window.open("https://survey123.arcgis.com/share/9ff6a6d4cac34632a83849a39763f5e5?portalUrl=https://jacksoncomo.maps.arcgis.com&field:polygon=" + stringbuilder + "&field:parcelnumber=" + parcelnum +"&encodeUrlParams=true"); 
-        }
-        function question(){
-            window.open("https://survey123.arcgis.com/share/013790224ced4037b80bde7812ca0815?portalUrl=https://jacksoncomo.maps.arcgis.com");
-        }
-    </script>
+		// Initialize a few variables when the page first loads ...
+		// ... parcelnum should be initialized to null so that the first parcel click or search by a user when a page loads can be tested to see if the value is null, and then if it is,
+		//		clearing a currently-selected parcel can be skipped since there will be no currently-selected parcel
+		// ... selectedParcel should be initialized to null so that the first search widget search does not invoke the unselectParcel function unnecessarily
+		// ... parcelsQuery is called from the 2 "select parcel" functions and should be initialized to null
+		window.onload = function()
+		{
+			parcelnum = null;
+			selectedParcel = null;
+			parcelsQuery = null;
+		};
+	</script>
 </head>
 <body>
-    <div class="Splashscreen">
-        <div id="myNav" class="overlay"></div>
-        <div class="splashcont">
-            <div class="row">
-				<span style="width:100%;text-align:center;font-size:2.5vh"><b>Jackson County, Missouri Land Record Change Request</b></span>	
+	<!-- Help Container -->
+	<!-- LEAVE THIS ALONE IT'S NOT GOING TO GET BETTER -->
+	<div id="helpContainer" style="position:absolute; width:100%; height:100%; display:none">
+		<div class="splashscreenoverlay d-flex align-items-center min-vh-100 splashbackground"></div>
+		<div class="container" id="helpscreen">
+			<!--<div class="row" style="margin-top:3%; margin-left:3%">
+				<div class="col-xl-3"><button class="btn btn-primary" onclick="openVideo()">Quick Start Video</button></div><div class="col-xl-9"></div>
+			</div>-->
+			<div class="row" id="helpimage">
+				 <img style="max-height:100%; max-width:100%" src="images/helpdoc.png"/>
+			</div>
+			<div class="row">
+				<div class="col-xl-10"></div><div class="col-xl-2"><button type="button" class="btn btn-primary" onclick="closeMe('helpContainer');">Close</button></div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Video Container 
+	<div id="videoContainer" style="position:absolute; width:100%; height:100%; display:none;">
+		<div id="videoDiv">
+			<video id="helpVideo" controls><source src="video/quickstartguidepv.mp4" type="video/mp4"></video>
+		</div>
+		<div id="videobackground" style="position:absolute; width:100%; height:100%;background-color:black;z-index:3;">
+			<button onclick="closeMe('videoContainer')" id="videoClose" class="btn btn-primary">CLOSE</button>
+		</div>
+	</div>-->
+
+	<!-- Splash Container -->
+	<div id="splashContainer" style="position:absolute; width:100%; height:100%;">
+		<div class="splashscreenoverlay d-flex align-items-center min-vh-100 splashbackground"></div>
+		<div class="jumbotron container" id="splashscreen">
+			<div class="row">
+				<span style="width:100%;text-align:center;font-size:2.5vh"><b>Jackson County, Missouri Parcel Viewer</b></span><p/>
+				<!--<div class="col-xl-3"><button class="btn btn-primary" id="quickstartbutton" onclick="openVideo()">Quick Start Video</button></div><div class="col-xl-9"></div>-->
 			</div>
 			<div class="row" id="splash-content" style="font-size:1.1em;">
 				<div class="col-xl-12">
 					<br/>
-					<div class="row" style="font-size:large">
-						<span style="width:100%;text-align:center;color:red;"><b>IMPORTANT!</br> PLEASE READ BEFORE CONTINUING!</b></span>
+					<div class="row" style="font-size:large;text-align:center;color:red; font-weight:bold;">
+						This is a recovery version of parcel viewer with limited functionality.
+						Due to unexpected network issues, we've temporarily simplified our website to ensure you can still access the most essential services.
 					</div>
-					<div class="row" style="font-size:small;">
-						<b>In the top left corner is a search bar. This can be used to search for the address of the parcel you are wanting to submit a form for.
-                        </br><img style="width:auto"src="Media/Searchbar.png">&nbsp   
-                        </br>Once you have searched the parcel please select it and make sure that it is <mark class = "cyan">highlighted</mark>.
-                        </br>If you are selecting multiple parcels please keep in mind that they must be adjacent to one another. All selected parcels should appear <mark class = "cyan">highlighted</mark> if one is selected by mistake click it again to deselect it.
-                    </br><img style="width: 80px"src="Media/Highlighted.png">&nbsp
-                        </br>Please also check to verify the correct parcels are selected using the list in the top right corner. If this list looks correct click on the submit selected button to be taken to the form.
-                    </br><img style="width: 120px"src="Media/parcellist.png">&nbsp    
-                        <!-- <p>Click here to view documentation on the Land Record Change process: <a href="Media/DPSSOP.pdf" target="_blank">PDF</a></p> -->
+					<br/>
+					<div class="row">
+						<span style="width:100%;text-align:center;color:red;"><b>DISCLAIMER:</b></span>
 					</div>
-					<div class="row" style="font-size:small;">
-						Please respond to our questionnaire about your experience with Parcel Viewer - click on the <img style="width: 3vh"src="Media/questions.png">&nbsp icon to fill out the form.
-                    </br></br></br>
-                    </br> Click anywhere to continue. These instructions can not be looked at again unless refreshed.
+					<div class="row" id="disclaimer" style="font-size:small;text-align:left;">
+						The information contained in this website is provided to the recipient pursuant to Section 610.011, RSMo.  Jackson County makes no warranties or representations of any kind, express or implied, regarding the information, data, or images provided herein.  All information, data, and service are provided "as is," and "with all faults" and by accessing this website, the recipient accepts the risk of any errors or omissions.  Jackson County is not liable in any way to the users of information, data, or service provided herein.  By accessing and using this information, data, or service, you agree to hold the County harmless in all matters and accounts arising from the use or reliance on the completeness or accuracy of this information, data, or service.
+					<p>
+					</div>
+					<div class="row" style="font-size:small;text-align:left;">
+						Please respond to our questionnaire about your experience with Parcel Viewer - click on the <img style="width: 3vh"src="images/questions.png">&nbsp icon to fill out the form.
 					</div>
 				</div>
-            </div>
-        </div>
-    </div>
-    <div id="viewDiv">
-    <div class="card">
-	    <div class="container2">
-		    <div class="container-header"><img style="height: 30px; width: 30px; vertical-align: middle; padding:5px" src="..\images\bluelogo.png" /><span style="vertical-align:middle; font-size:25px">Jackson County Missouri</span>
-		    </div>
-		    <div class="cont-title">
-			    <p style="font-weight: initial; text-align: center">Land Record Change Request</p>
-			    <p style="padding: 10px" id="selectedparcels">Selected Parcels:</p>
-			    <span id="alert" style="font-size: 11px; display: none; color: #3eaa3e">!!* to remove a parcel from this list use the map *!!</span><button class="action-button " id="submitButton" onclick='submitButton()'>
-				    <i class="esri-icon-check-mark" style="vertical-align: middle;"></i>
-				    <span>Continue</span>
-			    </button>
-		    </div>
-	    </div>
-    </div>
-    </div>
-    <div class="esri-widget--button" id="questionsbutton" onclick="question()"><span class="esri-icon-comment"></span></div>
+			</div>
+			<br/>
+			<div class="row">
+				<div class="col-xl-3"></div>
+				<div class="col-xl-6" style="text-align:center"><button type="button" class="btn btn-primary btn-lg" onclick="closeMe('splashContainer');">I Agree</button></div>
+				<div class="col-xl-3"></div>
+			</div>
+		</div> <!-- end of splashscreen jumbotron div -->
+	</div> <!-- end of splash div -->
+
+	<!-- div for modal photos popup -->
+	<div id="theModal">
+		<span id="modalClose" onclick="closeMe('theModal')";>&times;</span>
+		<img id="modalPhotos"> <!-- this is *supposed* to be missing the 'src' tag - source is determined in the code -->
+	</div>
+	
+	<!-- div that contains the view and map -->
+	<div id="viewDiv" class="container-fluid">
+		<div id="spinner"></div>
+	</div>
+	
+	<!-- Measure Widget -->
+	<div id="measureDiv">
+		<button
+			class="action-button esri-icon-measure-line"
+			id="distanceButton"
+			type="button"
+			title="Measure distance between two or more points"
+		></button>
+		<button
+			class="action-button esri-icon-measure-area"
+			id="areaButton"
+			type="button"
+			title="Measure area"
+		></button>
+	</div>
+	
+	<!-- Help and Questions buttons -->
+	<div class="esri-widget--button" id="helpbutton" onclick="openHelp()"><span class="esri-icon-question"></span></div>
+	<div class="esri-widget--button" id="questionsbutton" onclick="question()"><span class="esri-icon-comment"></span></div>
+	
+	<div id="infoDiv" class="resizable">
+	
+		<div id="infoDivHeader">
+			<div id="infoDiv-handle" class="ui-resizable-handle ui-resizable-n"></div><div id="infoDiv-closebutton" onclick="closeMe('infoDiv')"><img src="images/close.png"/></div>
+		</div>
+		
+		<div id="buttonscontainer">
+			<ul class="nav nav-pills nav-justified">
+				<li class="nav-item">
+					<a class="nav-link active" id="basicvaluetab" data-toggle="pill" href="#basicvalueinfo">BASIC & VALUE INFORMATION</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" id="ownertab" data-toggle="pill" href="#ownership">OWNERSHIP</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" id="econtab" data-toggle="pill" href="#econdevel">ECONOMIC DEVELOPMENT</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" id="photostab" data-toggle="pill" href="#photos">PHOTOS</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" id="toolstab" data-toggle="pill" href="#tools">PROPERTY TOOLS</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" id="electedtab" data-toggle="pill" href="#electedofficials">ELECTED OFFICIALS</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" id="faqtab" data-toggle="pill" href="#faq">F.A.Q.</a>
+				</li>
+			</ul>
+		</div>		
+		
+		<div class="tab-content">
+			<div id="basicvalueinfo" class="container-fluid tab-pane active">
+				<div class="row" style="height:96%;">
+					<div id="basic" class="col-xl-3">
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+						<div class="row"><div class="col-xl-12"><h5><b>Basic Information</b></h5></div></div>
+						<div class="row"><div class="col-xl-12"><b>Parcel #</b></div></div>
+						<div class="row"><div class="col-xl-1"></div><div class="col-xl-11" ID="lblParcelNum"></div></div>
+						<div class="row"><div class="col-xl-12"><b>Address:</b></div></div>
+						<div class="row"><div class="col-xl-1"></div><div class="col-xl-11" ID="lblSitusAddr"></div></div>
+						<div class="row"><div class="col-xl-1"></div><div class="col-xl-11" ID="lblSitusCityStateZip"></div></div>
+						<div class="row"><div class="col-xl-6"><b>Lot Size:</b></div><div class="col-xl-6" ID="lblLotSize"></div></div>
+						<div class="row"><div class="col-xl-6"><b>Bldg Area:</b></div><div class="col-xl-6" ID="lblBldgSqFt"></div></div>
+						<div class="row"><div class="col-xl-3"><b>#Beds:</b></div><div class="col-xl-3" ID="lblNumBR"></div><div class="col-xl-3"><b>#Baths:</b></div><div class="col-xl-3" ID="lblNumBaths"></div></div>
+						<div class="row"><div class="col-xl-6"><b>Year Built:</b></div><div class="col-xl-6" ID="lblYearBuilt"></div></div>
+						<div class="row"><div class="col-xl-6"><b>Tax Code Area:</b></div><div class="col-xl-6" ID="lblTCA"></div></div>
+						<div class="row"><div class="col-xl-12"><b>Land Use Code:</b></div></div>
+						<div class="row"><div class="col-xl-1"></div><div class="col-xl-11" ID="lblUseCode"></div></div>
+						<div class="row"><div class="col-xl-6"><b>Exemption:</b></div><div class="col-xl-6" ID="lblExemption"></div></div>
+						<div class="row"><div class="col-xl-12"><b>Legal Description:</b></div></div>
+						<div class="row"><div class="col-xl-1"></div><div class="col-xl-11" ID="lblLegalDescr"></div></div>
+					</div> <!-- end of basic -->
+					<div id="value" class="col-xl-8">
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+						<div class="row"><div class="col-xl-12"><h5><b>Property Values</b> (as of Tuesday of each week)</h5></div></div>
+						<div class="container">
+							<div class="row">
+								<div class="col-xl-3 border border-dark" id="divYear0">
+									<div class="row"><div class="col" id="lblYear0" style="font-weight:bold;font-size:medium;margin:5px 0px 4px 0px;"></div></div>
+									<!--<div class="row"><div class="col"><u><b>Land</b></u></div></div>
+									<div class="row"><div class="col">Agricultural:</div><div class="col" ID="lblYear0AgLand"></div></div>
+									<div class="row"><div class="col">Commercial:</div><div class="col" ID="lblYear0CommLand"></div></div>
+									<div class="row"><div class="col">Residential:</div><div class="col" ID="lblYear0ResLand"></div></div>
+									<div class="row"><div class="col"><u><b>Improvements</b></u></div></div>
+									<div class="row"><div class="col">Agricultural:</div><div class="col" ID="lblYear0AgImp"></div></div>
+									<div class="row"><div class="col">Commercial:</div><div class="col" ID="lblYear0CommImp"></div></div>
+									<div class="row"><div class="col">Residential:</div><div class="col" ID="lblYear0ResImp"></div></div>
+									<div class="row"><div class="col"><u><b>New Construction</b></u></div></div>
+									<div class="row"><div class="col">Agricultural:</div><div class="col" ID="lblYear0AgNC"></div></div>
+									<div class="row"><div class="col">Commercial:</div><div class="col" ID="lblYear0CommNC"></div></div>
+									<div class="row"><div class="col">Residential:</div><div class="col" ID="lblYear0ResNC"></div></div>
+									<hr style="height:2px;border-width:0;color:gray;background-color:gray">-->
+									<div class="row"><div class="col"><b>Total Market Value:</b></div><div class="col" ID="lblYear0TMV"></div></div>
+									<div class="row"><div class="col"><b>Total Assessed Value:</b></div><div class="col" ID="lblYear0TAV"></div></div>
+									<div class="row"><div class="col"><b>Total Taxable Value:</b></div><div class="col" ID="lblYear0TTV"></div></div>
+								</div>
+								<div class="col-xl-3 border border-dark" id="divYear1">
+									<div class="row"><div class="col" id="lblYear1" style="font-weight:bold;font-size:medium;margin:5px 0px 4px 0px;"></div></div>
+									<!--<div class="row"><div class="col"><u><b>Land</b></u></div></div>
+									<div class="row"><div class="col">Agricultural:</div><div class="col" ID="lblYear1AgLand"></div></div>
+									<div class="row"><div class="col">Commercial:</div><div class="col" ID="lblYear1CommLand"></div></div>
+									<div class="row"><div class="col">Residential:</div><div class="col" ID="lblYear1ResLand"></div></div>
+									<div class="row"><div class="col"><u><b>Improvements</b></u></div></div>
+									<div class="row"><div class="col">Agricultural:</div><div class="col" ID="lblYear1AgImp"></div></div>
+									<div class="row"><div class="col">Commercial:</div><div class="col" ID="lblYear1CommImp"></div></div>
+									<div class="row"><div class="col">Residential:</div><div class="col" ID="lblYear1ResImp"></div></div>
+									<div class="row"><div class="col"><u><b>New Construction</b></u></div></div>
+									<div class="row"><div class="col">Agricultural:</div><div class="col" ID="lblYear1AgNC"></div></div>
+									<div class="row"><div class="col">Commercial:</div><div class="col" ID="lblYear1CommNC"></div></div>
+									<div class="row"><div class="col">Residential:</div><div class="col" ID="lblYear1ResNC"></div></div>
+									<hr style="height:2px;border-width:0;color:gray;background-color:gray">-->
+									<div class="row"><div class="col"><b>Total Market Value:</b></div><div class="col" ID="lblYear1TMV"></div></div>
+									<div class="row"><div class="col"><b>Total Assessed Value:</b></div><div class="col" ID="lblYear1TAV"></div></div>
+									<div class="row"><div class="col"><b>Total Taxable Value:</b></div><div class="col" ID="lblYear1TTV"></div></div>
+								</div>
+								<div class="col-xl-3 border border-dark" id="divYear2">
+									<div class="row"><div class="col" id="lblYear2" style="font-weight:bold;font-size:medium;margin:5px 0px 4px 0px;"></div></div>
+									<!--<div class="row"><div class="col"><u><b>Land</b></u></div></div>
+									<div class="row"><div class="col">Agricultural:</div><div class="col" ID="lblYear2AgLand"></div></div>
+									<div class="row"><div class="col">Commercial:</div><div class="col" ID="lblYear2CommLand"></div></div>
+									<div class="row"><div class="col">Residential:</div><div class="col" ID="lblYear2ResLand"></div></div>
+									<div class="row"><div class="col"><u><b>Improvements</b></u></div></div>
+									<div class="row"><div class="col">Agricultural:</div><div class="col" ID="lblYear2AgImp"></div></div>
+									<div class="row"><div class="col">Commercial:</div><div class="col" ID="lblYear2CommImp"></div></div>
+									<div class="row"><div class="col">Residential:</div><div class="col" ID="lblYear2ResImp"></div></div>
+									<div class="row"><div class="col"><u><b>New Construction</b></u></div></div>
+									<div class="row"><div class="col">Agricultural:</div><div class="col" ID="lblYear2AgNC"></div></div>
+									<div class="row"><div class="col">Commercial:</div><div class="col" ID="lblYear2CommNC"></div></div>
+									<div class="row"><div class="col">Residential:</div><div class="col" ID="lblYear2ResNC"></div></div>
+									<hr style="height:2px;border-width:0;color:gray;background-color:gray">-->
+									<div class="row"><div class="col"><b>Total Market Value:</b></div><div class="col" ID="lblYear2TMV"></div></div>
+									<div class="row"><div class="col"><b>Total Assessed Value:</b></div><div class="col" ID="lblYear2TAV"></div></div>
+									<div class="row"><div class="col"><b>Total Taxable Value:</b></div><div class="col" ID="lblYear2TTV"></div></div>
+								</div>
+								<div class="col-xl-3 border border-dark" id="divYear3">
+									<div class="row"><div class="col" id="lblYear3" style="font-weight:bold;font-size:medium;margin:5px 0px 4px 0px;"></div></div>
+									<!--<div class="row"><div class="col"><u><b>Land</b></u></div></div>
+									<div class="row"><div class="col">Agricultural:</div><div class="col" ID="lblYear3AgLand"></div></div>
+									<div class="row"><div class="col">Commercial:</div><div class="col" ID="lblYear3CommLand"></div></div>
+									<div class="row"><div class="col">Residential:</div><div class="col" ID="lblYear3ResLand"></div></div>
+									<div class="row"><div class="col"><u><b>Improvements</b></u></div></div>
+									<div class="row"><div class="col">Agricultural:</div><div class="col" ID="lblYear3AgImp"></div></div>
+									<div class="row"><div class="col">Commercial:</div><div class="col" ID="lblYear3CommImp"></div></div>
+									<div class="row"><div class="col">Residential:</div><div class="col" ID="lblYear3ResImp"></div></div>
+									<div class="row"><div class="col"><u><b>New Construction</b></u></div></div>
+									<div class="row"><div class="col">Agricultural:</div><div class="col" ID="lblYear3AgNC"></div></div>
+									<div class="row"><div class="col">Commercial:</div><div class="col" ID="lblYear3CommNC"></div></div>
+									<div class="row"><div class="col">Residential:</div><div class="col" ID="lblYear3ResNC"></div></div>
+									<hr style="height:2px;border-width:0;color:gray;background-color:gray">-->
+									<div class="row"><div class="col"><b>Total Market Value:</b></div><div class="col" ID="lblYear3TMV"></div></div>
+									<div class="row"><div class="col"><b>Total Assessed Value:</b></div><div class="col" ID="lblYear3TAV"></div></div>
+									<div class="row"><div class="col"><b>Total Taxable Value:</b></div><div class="col" ID="lblYear3TTV"></div></div>
+								</div>
+							</div>
+						</div> <!-- end of container for values -->
+					</div> <!-- end of value -->
+				</div> <!-- end of row -->
+			</div>
+
+			<!-- tab for property owners -->
+			<div id="ownership" class="container-fluid tab-pane fade">
+				<div class="row" style="height:94%;">
+					<div id="firstowner" class="col-xl-4">
+						<table style="margin:2%">
+							<tr><td><h5><b>Owner:</b></h5></td></tr>
+							<tr><td><b>Name:</b></td><td ID="lblOwner1Name"></td></tr>
+							<tr><td><b>Address:</b></td><td ID="lblOwner1Address"></td></tr>
+						</table>
+					</div>
+					<div id="secondowner" class="col-xl-4">
+						<table style="margin:2%">
+							<tr><td><h5><b>Owner:</b></h5></td></tr>
+							<tr><td><b>Name:</b></td><td ID="lblOwner2Name"></td></tr>
+							<tr><td><b>Address:</b></td><td ID="lblOwner2Address"></td></tr>
+						</table>
+					</div>
+					<div id="otherowners" class="col-xl-3">
+						<div class="row" style="margin-top:2%"><div class="col-xl-12"><h5><b>Other Owners:</b></h5></div></div>
+						<div id="lblOtherOwnersList" style="margin:2%;font-size: 1.1em;"></div>
+					</div>
+				</div>
+			</div> <!-- end of ownership div -->
+
+			<div id="econdevel" class="container-fluid tab-pane fade">
+				<div class="row" style="height:96%;">
+					<div class="col-xl-12" style="text-align: center;"><h5><b>This section is temporarily disabled. We apologize for any inconvenience.</b></h5></div>
+					<!--<div id="TIFs" class="col-xl-5">
+						<div class="row"><div class="col-xl-12" style="height:10px;">-- spacer -</div></div>
+						<div class="row"><div class="col-xl-12"><h5><b>Tax Increment Financing:</b></h5></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --</div></div>
+						<div class="row">
+							<div class="col-xl-6">
+								<table id="TIFdistrict" style="width:100%;margin:1%;">
+									<tr><td style="width:50%"><b>TIF District Name:</b></td><td style="width:50%;" ID="lblTIFdist"></td></tr>
+									<tr><td style="width:50%"><b>Start Date:</b></td><td style="width:50%;" ID="lblTIFdistStartDate"></td></tr>
+									<tr><td style="width:50%"><b>End Date:</b></td><td style="width:50%;" ID="lblTIFdistEndDate"></td></tr>
+									<tr><td style="width:50%"><b>Duration in Years:</b></td><td style="width:50%;" ID="lblTIFdistDuration"></td></tr>
+								</table>
+							</div>
+							<div class="col-xl-6">
+								<table id="TIFproject" style="width:100%;margin:1%;">
+									<tr><td style="width:50%"><b>TIF Ordinance #:</b></td><td style="width:50%;" ID="lblTIFprojOrd"></td></tr>
+									<tr><td style="width:50%"><b>Start Date:</b></td><td style="width:5%0;" ID="lblTIFprojStartDate"></td></tr>
+									<tr><td style="width:50%"><b>End Date:</b></td><td style="width:50%;" ID="lblTIFprojEndDate"></td></tr>
+									<tr><td style="width:50%"><b>Duration in Years:</b></td><td style="width:50%;" ID="lblTIFprojDuration"></td></tr>
+								</table>
+							</div>
+						</div>
+					</div>
+					<div id="abatements" class="col-xl-3">
+						<div class="row"><div class="col-xl-12" style="height:10px;"><-- spacer --</div></div>
+						<div class="row"><div class="col-xl-12"><h5><b>Abatements:</b></h5></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --</div></div>
+						<table id="AbatementsTable" style="width:100%;margin:1%;">
+							<tr><td style="width:20%"><b>353:</b></td><td colspan="2" id="lbl353descr"></td></tr>
+							<tr><td style="width:20%"></td><td style="width:60%">353 From Year:</td><td ID="lbl353fromYr"></td></tr>
+							<tr><td style="width:20%"></td><td style="width:60%">353 To Year:</td><td ID="lbl353toYr"></td></tr>
+							<tr><td style="width:20%"><b>99:</b></td><td colspan="2" id="lbl99descr"></td></tr>
+							<tr><td style="width:20%"></td><td style="width:60%">99 From Year:</td><td ID="lbl99fromYr"></td></tr>
+							<tr><td style="width:20%"></td><td style="width:60%">99 To Year:</td><td ID="lbl99toYr"></td></tr>
+						</table>
+						
+					</div>
+					<div id="CommImpDist" class="col-xl-3">
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --</div></div>
+						<div class="row"><div class="col-xl-12"><h5><b>Community Improvement District:</b></h5></div></div>
+							<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --</div></div>
+							<div class="row"><div class="col-xl-12" ID="lblCID" style="font-size: 1.5em;"></div></div>
+					</div> -->
+				</div>
+			</div>
+			
+			<div id="photos" class="container-fluid tab-pane fade">
+			</div>
+			
+			<div id="tools" class="container-fluid tab-pane fade">
+				<div class="row" style="height:96%;padding-left:2%;">
+					<div id="paytaxes" class="col-md-3">
+						<div class="row"><div class="col-xl-12" style="text-align:center;"><h5><b>Pay Your Property Taxes</b></h5></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+						<div class="row" style="height:15vh;"><div class="col">Why stand in line at the Collection office or post office, when you can complete your payment online at anytime? Get started and go directly to this page or follow these step-by-step instructions.</div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+						<div class="row"><div class="col"><input id="btn-paytaxes" class="btn btn-primary" value="Click" onclick="window.open('https://www.jacksongov.org/176/Paying-Your-Taxes-Online')"/></div></div>
+					</div>
+					<div id="correctinfo" class="col-md-2">
+						<div class="row"><div class="col-xl-12" style="text-align:center;"><h5><b>Correct Your Property Address</b></h5></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+						<div class="row" style="height:45%;"><div class="col">Need to change your parcel's situs address? Go here to get it corrected.</div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+						<div class="row"><div class="col"><input id="btn-correctinfo" class="btn btn-primary" value="Click" onclick="window.open('https://jcgis.jacksongov.org/parcelviewer/Real_Estate_Situs_Address_Change.pdf')"/></div></div>
+						<div class="row"><div class="col"><br/></div></div>					
+					</div>
+					<div id="disagreeassessment" class="col-xl-3">
+						<div class="row"><div class="col-xl-12" style="text-align:center;"><h5><b>If You Disagree With Your Property Assessment</b></h5></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+						<div class="row" style="margin:1%;padding:1%;height:75%;">
+							<div class="col-md-11" style="border:1px solid #DCE1F0;margin:3%;padding:20%;font-size:1.2em;">
+								Closed for the season. Will return in May.
+							</div>
+							<!--<div class="col-md-11" id="formal" style="border:1px solid #DCE1F0;margin:3%;padding:2%">
+								<div class="col">
+									<div id="lblBOE" class="row">Request an Appeal to your property value.</div><br><br><br>
+									<div class="row"><input id="btn-BOE" class="btn btn-primary" value="Click" onclick="doAppeal()"/></div>
+								</div>
+							</div> -->
+						</div>
+					</div>  <!-- end of disagreeassessment -->
+					<div id="checkapppeal" class="col-xl-3">
+						<div class="row"><div class="col-xl-12" style="text-align:center;"><h5><b>Check on your current appeal</b></h5></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+						<div class="row" style="margin:1%;padding:1%;height:75%;">
+							<div class="col">
+								<div id="lblCheckappeal" class="row">You have a currently active appeal. Click on the button below to check on it. Please have your case number ready and enter it in the Search by Case Number box at the link.</div><br><br><br>
+								<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+								<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+								<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+								<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+								<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+								<div class="row"><input id="btn-Informal" class="btn btn-primary" value="Click" onclick="viewAppeal()"/></div>
+							</div>
+						</div>
+					</div> <!-- end of checkappeal -->
+					<div id="appealedlastyear" class="col-xl-3">
+						<div class="row"><div class="col-xl-12" style="text-align:center;"><h5><b>Property Appeal Status</b></h5></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+						<div class="row" style="margin:1%;padding:1%;height:75%;">
+							<div class="col">
+								<!-- contact number and put BOE not assessment -->
+								<div id="lblAppealedlastyear" class="row">A 2022 appeal request cannot be filed for this property due to a Formal appeal processed in 2021. If you feel this is an error or you did not file in 2021, please contact the Assessment Department at assessment@jacksongov.org or 816-881-3530.</div><br><br><br>
+							</div>
+						</div>
+					</div> <!-- end of appealedlastyear -->
+					<div id="print" class="col-xl-3">
+						<div class="row"><div class="col-xl-12" style="text-align:center;"><h5><b>Print Property Info, Map or Photos</b></h5></div></div>
+						<div class="row" style="text-align:center;"><div class="col-xl-12"><b>Include the following:</b></div></div>
+						<br/>
+						<div class="row"><div class="col-xl-4" style="text-align:right;"><input type="checkbox" id="chkInfo" checked=checked></div><div class="col-xl-8"><label> Property Info</label></div></div>
+						<div class="row"><div class="col-xl-4" style="text-align:right;"><input type="checkbox" id="chkPhotos"></div><div class="col-xl-8"><label> Photos</label></div></div>
+						<div class="row"><div class="col-xl-4" style="text-align:right;"><input type="checkbox" id="chkMap"></div><div class="col-xl-8"><label> Map</label></div></div>
+						<div class="row"><div class="col-xl-12" style="height:20px;"><!-- spacer --></div></div>
+						<div class="row" style="text-align:center;"><div class="col-xl-4"></div><div class="col-xl-4"><button type="button" class="btn btn-info btn-lg" id="btn-Print" onclick="PrintStuff()">Print</button></div><div class="col-xl-4"></div></div>
+					</div> <!--end of print -->
+				</div>
+			</div>
+			
+			<div id="electedofficials" class="container-fluid tab-pane fade">
+				<div class="row" style="height:96%;">
+					<div class="col-xl-12" style="text-align: center;"><h5><b>This section is temporarily disabled. We apologize for any inconvenience.</b></h5></div>
+					<!--<div id="local" class="col-xl-4">
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --</div></div>
+						<div class="row"><div class="col-xl-12"><h5><b>Jackson County</b></h5></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --</div></div>
+						<div class="row"><div class="col-xl-12"><b>County Executive:</b></div></div>
+						<div class="row"><div class="col-xl-12">&nbsp&nbsp&nbsp <label ID="lblJaCoExecName"></label> (<label ID="lblJaCoExecParty"></label>) &nbsp&nbsp&nbsp <label ID="hlJaCoExecWebsite"></label></div></div>
+						<div class="row"><div class="col-xl-12"><b>At-Large Legislator:</b></div></div>
+						<div class="row"><div class="col-xl-12">&nbsp&nbsp&nbsp <label ID="lblJaCoAtLargeName"></label> (<label ID="lblJaCoAtLargeParty"></label>) - District #<label ID="lblJaCoAtLargeDist"></label> &nbsp&nbsp&nbsp <label ID="hlJaCoAtLargeWebsite"></label></div></div>				
+						<div class="row"><div class="col-xl-12"><b>Individual Legislator:</b></div></div>
+						<div class="row"><div class="col-xl-12">&nbsp&nbsp&nbsp <label ID="lblJaCoIndivName"></label> (<label ID="lblJaCoIndivParty"></label>) - District #<label ID="lblJaCoIndivDist"></label> &nbsp&nbsp&nbsp <label ID="hlJaCoIndivWebsite"></label></div></div>
+					</div>
+					<div id="state" class="col-xl-4">
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --</div></div>
+						<div class="row"><div class="col-xl-12"><h5><b>State of Missouri</b></h5></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --</div></div>
+						<div class="row"><div class="col-xl-12"><b>Governor:</b></div></div>
+						<div class="row"><div class="col-xl-12">&nbsp&nbsp&nbsp <label ID="lblMOgovName"></label> (<label ID="lblMOgovParty"></label>) &nbsp&nbsp&nbsp <label ID="hlMOgovWebsite"><a href="https://governor.mo.gov/">Website</a></label></div></div>
+						<div class="row"><div class="col-xl-12"><b>Senator:</b></div></div>
+						<div class="row"><div class="col-xl-12">&nbsp&nbsp&nbsp <label ID="lblMOsenName"></label> (<label ID="lblMOsenParty"></label>) - District #<label ID="lblMOsenDist"></label> &nbsp&nbsp&nbsp <label ID="hlMOsenWebsite"></label></div></div>
+						<div class="row"><div class="col-xl-12"><b>Representative:</b></div></div>
+						<div class="row"><div class="col-xl-12">&nbsp&nbsp&nbsp <label ID="lblMOrepName"></label> (<label ID="lblMOrepParty"></label>) - District #<label ID="lblMOrepDist"></label> &nbsp&nbsp&nbsp <label ID="hlMOrepWebsite"></label></div></div>
+					</div>
+					<div id="federal" class="col-xl-3">
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --</div></div>
+						<div class="row"><div class="col-xl-12"><h5><b>United States</b></h5></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --</div></div>
+						<div class="row"><div class="col-xl-12"><b>Senator:</b></div></div>
+						<div class="row"><div class="col-xl-12">&nbsp&nbsp&nbsp <label ID="lblUSsen1Name"></label> (<label ID="lblUSsen1Party"></label>) &nbsp&nbsp&nbsp <label ID="hlUSsen1Website"></label></div></div>
+						<div class="row"><div class="col-xl-12"><b>Senator:</b></div></div>
+						<div class="row"><div class="col-xl-12">&nbsp&nbsp&nbsp <label ID="lblUSsen2Name"></label> (<label ID="lblUSsen2Party"></label>) &nbsp&nbsp&nbsp <label ID="hlUSsen2Website"></label></div></div>
+						<div class="row"><div class="col-xl-12"><b>Representative:</b></div></div>
+						<div class="row"><div class="col-xl-12">&nbsp&nbsp&nbsp <label ID="lblUSHouseName"></label> (<label ID="lblUSHouseParty"></label>) - District #<label ID="lblUSHouseDist"></label> &nbsp&nbsp&nbsp <label ID="hlUSHouseWebsite"></label></div></div>
+					</div> -->
+				</div>
+			</div>
+			<div id="faq" class="container-fluid tab-pane fade">
+				<div class="row" style="height:96%;font-size:1.2em;padding-left:4%;">
+					<div class="col-xl-2" style="background-color:white;margin:1%;padding:1%;box-shadow: black 8px 6px 13px -6px;">
+						<div class="row" style="text-align:center;"><div class="col-xl-12"><h5><b>General questions about the assessment process?</b></h5></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+						<div class="row"><div class="col-xl-12">
+							If you are unsure about anything regarding the real estate property assessment process, please go to this page <b><a href="https://www.jacksongov.org/Government/Departments/Assessment/FAQs" target="_blank">here</a></b> to read some of the most commonly asked questions about assessment.
+						</div></div>
+					</div>
+					<div class="col-xl-2" style="background-color:white;margin:1%;padding:1%;box-shadow: black 8px 6px 13px -6px;">
+						<div class="row" style="text-align:center;"><div class="col-xl-12"><h5><b>How do I split my property or what can I build on my property?</b></h5></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+						<div class="row"><div class="col-xl-12">
+							Please contact the city or county zoning or building department for where the property is located.
+						</div></div>
+					</div>
+					<div class="col-xl-2" style="background-color:white;margin:1%;padding:1%;box-shadow: black 8px 6px 13px -6px;">
+						<div class="row" style="text-align:center;"><div class="col-xl-12"><h5><b>Issues with your property's location address?</b></h5></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+						<div class="row"><div class="col-xl-12">
+							If you want to change your property's current location address, click on the Property Tools tab above and go to the link at the "Correct Your Property Address" pane.
+							<br/><br/>If your property has no existing site address, you will need to go to the city or county zoning department where your property is located and get an address assigned there.
+						</div></div>
+					</div>
+					<div class="col-xl-2" style="background-color:white;margin:1%;padding:1%;box-shadow: black 8px 6px 13px -6px;">
+						<div class="row" style="text-align:center;"><div class="col-xl-12"><h5><b>How do I find out about easements on my property?</b></h5></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+						<div class="row"><div class="col-xl-12">
+							You will need to research this in the <b><a href="https://aumentumweb.jacksongov.org/" target="_blank">Jackson County Records Department</a></b>. Jackson County Geographic Information Systems and Assessment Mapping do not keep records of easements. 
+						</div></div>
+					</div>
+					<div class="col-xl-2" style="background-color:white;margin:1%;padding:1%;box-shadow: black 8px 6px 13px -6px;">
+						<div class="row" style="text-align:center;"><div class="col-xl-12"><h5><b>How do I get a plot plan for my property for a building permit?</b></h5></div></div>
+						<div class="row"><div class="col-xl-12" style="height:10px;"><!-- spacer --></div></div>
+						<div class="row"><div class="col-xl-12">
+							You will need to contact a surveyor or engineer of your choice to get one of those.
+							<br/><br/>Property dimensions as shown in the Propery Features --> Property Dimensions layer on this parcel viewer are not survey accurate and should not be relied upon for anything except approximations.
+						</div></div>
+					</div>
+				</div>
+			</div> <!-- end of faq div -->
+		</div> <!-- end of tab-content -->
+	</div> <!-- end of infoDiv -->
 </body>
-
 </html>
-
